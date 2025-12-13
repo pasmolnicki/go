@@ -1,4 +1,6 @@
 
+# Konstrukcja `server`
+
 - `ClientHandler`:
     - gracz się właśnie dołączył, jako wartość zwrotną powienien wysłać "id" gracza i oczekiwać, ąż klasa Server przyznaczy temu graczowi grę, przy użyciu klasy `Match`
 - `ClientManager`:

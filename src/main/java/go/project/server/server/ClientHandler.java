@@ -3,16 +3,23 @@ package go.project.server.server;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import go.project.server.server.json.Connection;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import go.project.server.server.json.JsonFmt;
 
 public class ClientHandler implements Runnable {
+
+    static public enum State {
+        CONNECTED,
+        WAITING,
+        IN_MATCH,
+        DISCONNECTED
+    }
+
     private ClientData clientData;
     private PrintWriter out;
-    private boolean waitingForMatch = true;
+    private State state;
     
     public ClientHandler(Socket socket) {
+        this.state = State.CONNECTED;
         this.clientData = new ClientData(socket);
     }
 
@@ -23,10 +30,8 @@ public class ClientHandler implements Runnable {
             out = new PrintWriter(clientData.getConnection().getOutputStream(), true);
             
             // Send the player id
-            ObjectMapper mapper = new ObjectMapper();
-            String connectionJson = mapper.writeValueAsString(
-                new Connection(this.clientData.getClientId()));
-            out.println(connectionJson);
+            out.println(JsonFmt.toJson(clientData));
+            setState(State.WAITING);
 
             // Handle client communication here
             while(isWaitingForMatch()) {
@@ -37,30 +42,38 @@ public class ClientHandler implements Runnable {
             // Joined a match, further handling will be done in Match class
         } catch (Exception e) {
             e.printStackTrace();
-            join();
-
-            // Handle disconnection
-            try {
-                clientData.getConnection().close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+            close();
         }
+    }
+
+    final public void close() {
+        try {
+            clientData.getConnection().close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        this.state = State.DISCONNECTED;
+    }
+
+    final public State getState() {
+        return state;
     }
 
     final public ClientData getClientData() {
         return clientData;
     }
 
+    synchronized private void setState(final State newState) {
+        this.state = newState;
+    }
+
     final public void join() {
-        synchronized(this) {
-            waitingForMatch = false;
-        }
+        setState(State.IN_MATCH);
     }
 
     final public boolean isWaitingForMatch() {
         synchronized(this) {
-            return waitingForMatch;
+            return this.state == State.WAITING;
         }
     }
 }

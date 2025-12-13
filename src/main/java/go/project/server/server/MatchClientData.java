@@ -2,15 +2,15 @@ package go.project.server.server;
 
 import go.project.server.game.base.Color;
 
-public class MatchClient extends ClientData {
+public class MatchClientData extends ClientData {
     private String matchId;
     private Color side;
 
-    public MatchClient(java.net.Socket conn) {
+    public MatchClientData(java.net.Socket conn) {
         super(conn);
     }
 
-    public MatchClient(final ClientData clientData, Color side, String matchId) {
+    public MatchClientData(final ClientData clientData, Color side, String matchId) {
         super(clientData);
         this.matchId = matchId;
         this.side = side;

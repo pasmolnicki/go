@@ -31,6 +31,11 @@ public class Board implements BoardLike {
     }
 
     @Override
+    public final Color[][] getGrid() {
+        return grid;
+    }
+
+    @Override
     public int getSize() {
         return size;
     }
@@ -38,11 +43,14 @@ public class Board implements BoardLike {
     @Override
     public void playMove(final Move move) {
         // TODO: implement 1-3 points
+        if (move.isPass()) {
+            return;
+        }
     }
 
     @Override
     public boolean isLegalMove(final Move move) {
-        return grid[move.getX()][move.getY()] == Color.NONE;
+        return move.isPass() || grid[move.getX()][move.getY()] == Color.NONE;
     }
 
     @Override

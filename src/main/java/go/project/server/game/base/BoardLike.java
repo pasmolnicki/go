@@ -2,6 +2,7 @@ package go.project.server.game.base;
 
 // Represents behavior common to all Board-like entities
 public interface BoardLike {
+    Color[][] getGrid(); // returns the current board grid
     Color getCurrentSide(); // returns which side is to play now
     int resize(int newSize); // resizes the board to newSize x newSize
     int getSize(); // returns current board size (e.g., 19 for a 19x19 board)
