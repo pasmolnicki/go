@@ -18,6 +18,10 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
     private State state;
     
+    /**
+     * Initializes a ClientHandler for the given socket connection.
+     * @param socket The socket connected to the client.
+     */
     public ClientHandler(Socket socket) {
         this.state = State.CONNECTED;
         this.clientData = new ClientData(socket);
@@ -30,10 +34,10 @@ public class ClientHandler implements Runnable {
             out = new PrintWriter(clientData.getConnection().getOutputStream(), true);
             
             // Send the player id
-            out.println(JsonFmt.toJson(clientData));
+            out.println(JsonFmt.toJson(clientData.data()));
             setState(State.WAITING);
 
-            // Handle client communication here
+            // wait for a match to be assigned
             while(isWaitingForMatch()) {
                 // Waiting for a match
                 Thread.yield();
@@ -46,6 +50,9 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Closes the client connection and updates state.
+     */
     final public void close() {
         try {
             clientData.getConnection().close();
@@ -55,22 +62,38 @@ public class ClientHandler implements Runnable {
         this.state = State.DISCONNECTED;
     }
 
+    /**
+     * Gets the current state of the client.
+    */ 
     final public State getState() {
         return state;
     }
 
+    /**
+     * Gets the ClientData associated with this handler.
+     */
     final public ClientData getClientData() {
         return clientData;
     }
 
+    /**
+     * Sets the state of the client handler in a thread-safe manner.
+     */
     synchronized private void setState(final State newState) {
         this.state = newState;
     }
 
+    /**
+     * Marks the client as having joined a match.
+     */
     final public void join() {
         setState(State.IN_MATCH);
     }
 
+    /**
+     * Checks if the client is waiting for a match (thread-safe).
+     * @return true if the client is in WAITING state, false otherwise.
+     */
     final public boolean isWaitingForMatch() {
         synchronized(this) {
             return this.state == State.WAITING;

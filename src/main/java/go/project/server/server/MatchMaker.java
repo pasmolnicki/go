@@ -17,21 +17,22 @@ public class MatchMaker implements Runnable {
     @Override
     public void run() {
         while (true) {
-            try {
-                tryCreateMatch();
-                Thread.sleep(1000);
-                tryCleanup();
-                Thread.yield();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            tryCreateMatch();
+            tryCleanup();
+            Thread.yield();
         }
     }
 
+    /**
+     * Cleans up completed matches.
+     */
     private void tryCleanup() {
         matchManager.cleanupCompletedMatches();
     }
 
+    /**
+     * Attempts to create matches from awaiting clients.
+     */
     private void tryCreateMatch() {
         Vector<ClientHandler> awaitingClients = clientManager.awaitingClients();
         while (awaitingClients.size() >= 2) {

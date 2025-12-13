@@ -1,4 +1,4 @@
-package go.project.server.server;
+package go.project.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 import go.project.server.game.base.Config;
+import go.project.server.server.Logger;
 
 public class MockClient {
 
@@ -15,13 +16,20 @@ public class MockClient {
     private BufferedReader in;
 
     /**
+     * Logs a message with the global Logger.
+     */
+    private static void log(String message) {
+        Logger.getInstance().log("MockClient", message);
+    }
+
+    /**
      * Connects to the server using the port defined in Config.
      */
     public void connect() throws IOException {
         this.socket = new Socket("localhost", Config.PORT);
         this.out = new PrintWriter(socket.getOutputStream(), true);
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        System.out.println("[MockClient] Connected to server at localhost:" + Config.PORT);
+        log("Connected to server at localhost:" + Config.PORT);
     }
 
     /**
@@ -29,10 +37,10 @@ public class MockClient {
      */
     public void send(String message) {
         if (out != null) {
-            System.out.println("[MockClient] Sending: " + message);
+            log("Sending: " + message);
             out.println(message);
         } else {
-            System.err.println("[MockClient] Not connected. Cannot send message.");
+            System.err.println("Not connected. Cannot send message.");
         }
     }
 
@@ -44,13 +52,13 @@ public class MockClient {
         try {
             String line = in.readLine();
             if (line != null) {
-                System.out.println("[MockClient] Received: " + line);
+                log("Received: " + line);
             } else {
-                System.out.println("[MockClient] Server closed connection.");
+                log("Server closed connection.");
             }
             return line;
         } catch (IOException e) {
-            System.err.println("[MockClient] Error reading from server: " + e.getMessage());
+            System.err.println("Error reading from server: " + e.getMessage());
             return null;
         }
     }
@@ -62,7 +70,7 @@ public class MockClient {
         try {
             if (socket != null && !socket.isClosed()) {
                 socket.close();
-                System.out.println("[MockClient] Connection closed.");
+                log("Connection closed.");
             }
         } catch (IOException e) {
             e.printStackTrace();

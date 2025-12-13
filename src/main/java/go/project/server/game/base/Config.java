@@ -8,7 +8,7 @@ final public class Config {
     }
 
     // Server config
-    public static final int PORT = 8080;
+    public static final int PORT = 3000;
     public static final int MAX_CLIENTS = 10;
 
     // Client config

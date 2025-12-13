@@ -1,6 +1,7 @@
 package go.project.server.server;
 
 import java.io.PrintWriter;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import go.project.server.game.ExtBoard;
@@ -19,10 +20,13 @@ public class Match implements Runnable {
     private final String matchId;
     private State state;
 
+    // Possible states of a match,
+    // Note that once a match is COMPLETED or ABORTED
+    // it should be cleaned up by MatchManager
     public static enum State {
         ONGOING,
-        COMPLETED,
-        ABORTED
+        COMPLETED, // Match finished normally
+        ABORTED // Error or player disconnected
     }
 
     public Match(ClientData cl1, ClientData cl2) {
@@ -32,6 +36,10 @@ public class Match implements Runnable {
 
         this.black = new MatchClientData(cl1, Color.BLACK, matchId);
         this.white = new MatchClientData(cl2, Color.WHITE, matchId);
+    }
+
+    private static void log(String msg) {
+        Logger.getInstance().log("Match", msg);
     }
 
     @Override
@@ -53,7 +61,10 @@ public class Match implements Runnable {
             while (getState() == State.ONGOING) {
                 blackOut.println(JsonFmt.toJson(handleInput(black, blackIn)));
                 whiteOut.println(JsonFmt.toJson(handleInput(white, whiteIn)));
-            }   
+            }
+        } catch(NoSuchElementException e) {
+            log("A player disconnected: " + e.getMessage());
+            endState = State.ABORTED;
         } catch (Exception e) {
             e.printStackTrace();
             endState = State.ABORTED;
@@ -70,7 +81,7 @@ public class Match implements Runnable {
         this.state = endState;
     }
 
-    private GameResponse handleInput(MatchClientData client, Scanner in) {
+    private GameResponse handleInput(MatchClientData client, Scanner in) throws Exception {
         String response = GameResponse.MESSAGE_MOVE_OK;
         int status = GameResponse.STATUS_OK;
 
@@ -85,24 +96,22 @@ public class Match implements Runnable {
                     GameCommand.PayloadMakeMove payload = (GameCommand.PayloadMakeMove) command.payload;
                     Move move = Move.parseMove(payload.move, board.getSize(), board.getCurrentSide());
                 } catch (NumberFormatException e) {
-                    System.out.println("Number format error in move from player " + command.playerid + ": " + e.getMessage());
+                    log("Number format error in move from player " + command.playerid + ": " + e.getMessage());
                     status = GameResponse.STATUS_ERROR;
                     response = GameResponse.MESSAGE_INVALID_MOVE;
                 } catch (IllegalArgumentException e) {
-                    System.out.println("Illegal move from player " + command.playerid + ": " + e.getMessage());
+                    log("Illegal move from player " + command.playerid + ": " + e.getMessage());
                     status = GameResponse.STATUS_ERROR;
                     response = GameResponse.MESSAGE_INVALID_MOVE;
                 }
             } else {
-                System.out.println("Unknown command from player " + command.playerid);
+                log("Unknown command from player " + command.playerid);
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            close(client, GameResponse.STATUS_ERROR, GameResponse.MESSAGE_INTERNAL_ERROR);
-            this.state = State.ABORTED;
-            return new GameResponse(GameResponse.STATUS_ERROR, GameResponse.MESSAGE_INTERNAL_ERROR);
+        } catch(NoSuchElementException e) {
+            throw e; // Rethrow to be handled in run()
         }
+        // Any other exceptions are internal errors
 
         return new GameResponse(status, response);
     }
@@ -112,6 +121,7 @@ public class Match implements Runnable {
             if (client.getConnection().isClosed()) return;
 
             PrintWriter out = new PrintWriter(client.getConnection().getOutputStream(), true);
+            log("Closing connection to player " + client.data().getClientId() + " with status " + status);
             out.println(JsonFmt.toJson(new GameResponse(status, message)));
             client.getConnection().close();
 
