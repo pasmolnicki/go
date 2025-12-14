@@ -17,14 +17,14 @@ public class ClientManager {
     /**
      * Add a new client
      */
-    public final void addClient(final ClientHandler client) {
+    synchronized public final void addClient(final ClientHandler client) {
         clients.put(client.getClientData().data().getClientId(), client);
     }
 
     /**
      * Remove a client by clientId
      */
-    public final void removeClient(final String clientId) {
+    synchronized public final void removeClient(final String clientId) {
         clients.remove(clientId);
     }
 
@@ -32,7 +32,7 @@ public class ClientManager {
      * Get a list of clients waiting for a match
      * @return Vector of awaiting clients (not null)
      */
-    public final Vector<ClientHandler> awaitingClients() {
+    synchronized public final Vector<ClientHandler> awaitingClients() {
         Vector<ClientHandler> awaiting = new Vector<>();
         for (ClientHandler client : clients.values()) {
             if (client.isWaitingForMatch()) {

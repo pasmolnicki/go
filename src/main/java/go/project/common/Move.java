@@ -1,4 +1,4 @@
-package go.project.server.game.base;
+package go.project.common;
 
 
 // Represents a move in Go, basically a coordinate

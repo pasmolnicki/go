@@ -1,6 +1,6 @@
 package go.project.server.server;
 
-import go.project.server.game.base.Color;
+import go.project.common.Color;
 
 public class MatchClientData extends ClientData {
     private String matchId;

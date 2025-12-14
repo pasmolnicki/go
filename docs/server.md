@@ -1,19 +1,50 @@
 
-# Konstrukcja `server`
+# Konstrukcja [`server`](../src/main/java/go/project/server/server/)
 
-- `ClientHandler`:
-    - gracz się właśnie dołączył, jako wartość zwrotną powienien wysłać "id" gracza i oczekiwać, ąż klasa Server przyznaczy temu graczowi grę, przy użyciu klasy `Match`
-- `ClientManager`:
-    - Trzyma wszystkie obiekty `ClientHandler` i ewentualnie zwraca, czy można stworzyć mecz
-- `Match`:
-    - Stworzony po połączeniu 2 graczy. Zwracany jest kolor dla obydwóch graczy i zaczyna czarny
-    - Obsługa komend do gry (prawdopodobnie inna klasa ma się tym zając)
-    - Obsługa zerwania połączenia (bezpośrednio w `Match`)
-    - Obsługa zakończenia gry
-- `MatchManager`:
-    - Trzyma wszystkie obiekty `Match`, umożliwia dodanie nowego meczu
-- `Server`:
-    - Przetrzymuje mapę wszystkich gier (może być zdelegowane do innej klasy) oraz oczekujących klientów (chyba też inna klasa może się tym zająć)
-    - Po znalezieniu 2 gracza, odbierane są sockety od `ClientHandler` oraz przerywany jest status oczekiwania. Tworzony jest pokój gry `Match`
+## [`Server`](../src/main/java/go/project/server/server/Server.java)
 
-- `json`:
+Jedynie nasłuchuje na przychodzące połączenia, następnie deleguje je do `ClientPool`
+
+## [`ClientPool`](../src/main/java/go/project/server/server/ClientPool.java)
+
+Trzyma 'ThreadPool' oraz `ClientManager`, odbiera połączenia od serwera i dodanie nowe zadanie w thread pool'u - co uruchamia `ClientHandler`
+
+## [`ClientHandler`](../src/main/java/go/project/server/server/ClientHandler.java)
+
+Uruchamiany tuż po połączeniu użytkownika, wysyła id gracza i czeka, aż zostanie przydzielony do meczu.
+
+Zwracany format json:
+[`Connection`](../src/main/java/go/project/common/json/Connection.java)
+
+## [`ClientManager`](../src/main/java/go/project/server/server/ClientManager.java)
+
+Trzyma wszystkie obiekty `ClientHandler` i umożliwia sprawdzenie czy można stworzyć mecz
+
+## [`MatchMaker`](../src/main/java/go/project/server/server/MatchMaker.java)
+
+Działa jako oddzielny wątek (w ramach [`MatchMakerThread`](../src/main/java/go/project/server/server/MatchMakerThread.java)), cyklicznie sprawdza, czy są oczekujący klienci, a następnie, przy wystarczającej ilości, łączy ich w pary w ramach meczu (`Match`)
+
+## [`Match`](../src/main/java/go/project/server/server/Match.java)
+
+Stworzony po połączeniu 2 graczy. 
+
+Zwracany jest do klientów kolor dla obydwóch graczy i zaczyna czarny
+
+Całą obsługę komend impelemntuje `Match.GameThread`
+
+## [`Match.GameThread`](../src/main/java/go/project/server/server/Match.java)
+
+Obsługuje zapytania użytkownia podczas gry (tzn. komendy). Używa do tego formatu [`GameCommand<T>`](../src/main/java/go/project/common/json/GameCommand.java)
+
+Umożliwia odsyłanie odpowiedzi, nawet gdy nie jest tura użytkownika
+
+## [`MatchManager`](../src/main/java/go/project/server/server/MatchManager.java)
+
+Trzyma wszystkie obiekty `Match`, umożliwia dodanie nowego meczu
+
+## [`Logger`](../src/main/java/go/project/server/server/Logger.java)
+Globaly logger (co tu więcej dodawać?)
+
+## [`MockClient`](../src/test/java/go/project/server/MockClient.java)
+
+Testowy klient, minimalna implementacja klienta

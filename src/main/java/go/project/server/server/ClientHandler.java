@@ -3,7 +3,7 @@ package go.project.server.server;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import go.project.server.server.json.JsonFmt;
+import go.project.common.json.JsonFmt;
 
 public class ClientHandler implements Runnable {
 
@@ -34,7 +34,8 @@ public class ClientHandler implements Runnable {
             out = new PrintWriter(clientData.getConnection().getOutputStream(), true);
             
             // Send the player id
-            out.println(JsonFmt.toJson(clientData.data()));
+            String json = JsonFmt.toJson(clientData.data());
+            out.println(json);
             setState(State.WAITING);
 
             // wait for a match to be assigned

@@ -8,6 +8,7 @@ public class MatchMaker implements Runnable {
     private ClientManager clientManager;
     private MatchManager matchManager;
     private ExecutorService matchPool = Executors.newCachedThreadPool();
+    private volatile boolean isRunning = true;
 
     public MatchMaker(ClientManager clientManager, MatchManager matchManager) {
         this.clientManager = clientManager;
@@ -16,7 +17,7 @@ public class MatchMaker implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+        while (isRunning) {
             tryCreateMatch();
             tryCleanup();
             Thread.yield();
@@ -28,6 +29,13 @@ public class MatchMaker implements Runnable {
      */
     private void tryCleanup() {
         matchManager.cleanupCompletedMatches();
+    }
+
+    /**
+     * Stops the match maker.
+     */
+    public void stop() {
+        isRunning = false;
     }
 
     /**

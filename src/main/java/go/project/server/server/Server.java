@@ -4,11 +4,9 @@ package go.project.server.server;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.concurrent.Executors;
 
-import go.project.server.game.base.Config;
+import go.project.common.Config;
 
-import java.util.concurrent.ExecutorService;
 
 public class Server {
 
@@ -17,10 +15,10 @@ public class Server {
 
     // Thread pool for handling client connections, that is waiting for 
     // the match to start and send upon connection data
-    private ExecutorService clientPool;
+    private ClientPool clientPool;
 
     // Thread for the match maker, which pairs clients into matches
-    private Thread matchMakerThread;
+    private MatchMakerThread matchMakerThread;
 
     // Managers for clients and matches
     private MatchManager matchManager = new MatchManager();
@@ -42,13 +40,14 @@ public class Server {
     /**
      * Initializes the server on the specified port with a given log level.
      * @param logLevel The logging level to use.
+     * @param port The port number on which the server will listen.
      * @throws Exception If the server socket cannot be created (e.g., port is in use).
      */
-    public Server(int logLevel) throws Exception {
-        serverSocket = new ServerSocket(Config.PORT);
+    public Server(int logLevel, int port) throws Exception {
+        serverSocket = new ServerSocket(port);
         Logger.getInstance().setLogLevel(logLevel);
     }
-
+    
     private void log(String msg) {
         Logger.getInstance().log("Server", msg);
     }
@@ -60,20 +59,16 @@ public class Server {
     public void start() throws Exception {
         log("Server started on port " + serverSocket.getLocalPort());
         
-        this.matchMakerThread = new Thread(new MatchMaker(clientManager, matchManager));
+        this.matchMakerThread = new MatchMakerThread(clientManager, matchManager);
         this.matchMakerThread.start();
-
-        this.clientPool = Executors.newFixedThreadPool(Config.MAX_CLIENTS);
+        this.clientPool = new ClientPool(clientManager);
 
         try {
             while (isRunning) {
                 Socket clientSocket = serverSocket.accept();
                 log("New client connected: " + clientSocket.getRemoteSocketAddress());
-
-                ClientHandler clientHandler = new ClientHandler(clientSocket);
-                clientManager.addClient(clientHandler);
-                clientPool.execute(clientHandler);
-            } 
+                clientPool.addClient(new ClientHandler(clientSocket));
+            }
         } catch(SocketException se) {
             if (isRunning) {
                 throw se; // re-throw if not caused by server stop
@@ -104,15 +99,17 @@ public class Server {
                 return;
             }
 
+            log("Shutting down server...");
             isRunning = false;
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
-            }
             if (clientPool != null && !clientPool.isShutdown()) {
-                clientPool.shutdownNow();
+                clientPool.shutdown();
             }
             if (matchMakerThread != null && matchMakerThread.isAlive()) {
-                matchMakerThread.interrupt();
+                matchMakerThread.kill();
+                matchMakerThread.join();
+            }
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
             }
             log("Server stopped.");
         }

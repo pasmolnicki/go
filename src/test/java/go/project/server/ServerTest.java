@@ -1,21 +1,22 @@
 package go.project.server;
 
 import static org.junit.Assert.fail;
+
 import org.junit.Test;
 
+import go.project.common.Config;
+import go.project.common.json.Connection;
+import go.project.common.json.GameCommand;
+import go.project.common.json.GameResponse;
+import go.project.common.json.JsonFmt;
+import go.project.common.json.PlayerTurn;
 import go.project.server.server.Logger;
 import go.project.server.server.Server;
-import go.project.server.server.json.JsonFmt;
-import go.project.server.server.json.PlayerTurn;
 
 public class ServerTest {
 
-    static final boolean VERBOSE = true;
-
     static void log(String msg) {
-        if (VERBOSE) {
-            System.out.println("[ServerTest] " + msg);
-        }
+        Logger.getInstance().log("ServerTest", msg);
     }
 
 
@@ -28,9 +29,10 @@ public class ServerTest {
      */
     @Test
     public void testMockClientConnection() {
+        Server server;
         try {
             // Pass true to see verbose server logs
-            Server server = new Server(Logger.LEVEL_ERROR);
+            server = new Server(Logger.LEVEL_ERROR, Config.PORT);
             server.async();
         } catch (Exception e) {
             e.printStackTrace();
@@ -48,6 +50,7 @@ public class ServerTest {
                 log("Received from server: " + resp);
             }
             client.close();
+            server.stop();
         } catch (Exception e) {
             e.printStackTrace();
             fail("MockClient failed to connect to server");
@@ -62,27 +65,37 @@ public class ServerTest {
      */
     @Test
     public void testMatchMaking() {
+        int port = Config.PORT + 1;
         Server server;
         try {
             // Pass LEVEL_ALL to see verbose server logs
-            server = new Server(Logger.LEVEL_ALL);
+            server = new Server(Logger.LEVEL_ERROR, port);
             server.async();
         } catch (Exception e) {
             e.printStackTrace();
             fail("Server failed to start: " + e.getMessage());
             return;
-        }        
+        }
 
         // Connect two mock clients and verify they get matched
         try {
-            MockClient client1 = new MockClient();
+            MockClient client1 = new MockClient(port);
             client1.connect();
             String resp1 = client1.receive();
             log("Client1 received: " + resp1);
-            MockClient client2 = new MockClient();
+            Connection conn = JsonFmt.fromJson(resp1, Connection.class);
+            if (conn.getClientId().isEmpty()) {
+                fail("Client1 did not receive a valid client ID from server");
+            }
+            
+            MockClient client2 = new MockClient(port);
             client2.connect();
             String resp2 = client2.receive();
             log("Client2 received: " + resp2);
+            Connection conn2 = JsonFmt.fromJson(resp2, Connection.class);
+            if (conn2.getClientId().isEmpty() || conn2.getClientId().equals(conn.getClientId())) {
+                fail("Client2 did not receive a valid unique client ID from server");
+            }
 
             String side1 = client1.receive();
             String side2 = client2.receive();
@@ -110,8 +123,84 @@ public class ServerTest {
         }
     }
 
+    /**
+     * Tests a mock match play between 2 MockClients connected to the Server.
+     * Verifies that:
+     * a) Both clients can connect and get matched.
+     * b) Each client gets their side assignment.
+     * c) Each client can send at any time a move command to the server
+     * and get non-blocking responses (not waiting for their turn).
+     * d) At least one move from either client is accepted by the server.
+     */
     @Test
     public void testMatchPlay() {
-        
+        int port = Config.PORT + 2;
+        Server server;
+        try {
+            // Pass LEVEL_ALL to see verbose server logs
+            server = new Server(Logger.LEVEL_ERROR, port);
+            server.async();
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Server failed to start: " + e.getMessage());
+            return;
+        }
+
+        // Connect two mock clients and verify they get matched
+        try {
+            MockClient client1 = new MockClient(port);
+            client1.connect();
+            String cl1Id = client1.receive();
+            log("Client1 received: " + cl1Id);
+            MockClient client2 = new MockClient(port);
+            client2.connect();
+            String cl2Id = client2.receive();
+            log("Client2 received: " + cl2Id);
+
+            String side1 = client1.receive();
+            String side2 = client2.receive();
+            log("Client1 side: " + side1);
+            log("Client2 side: " + side2);
+
+            // Simulate a few moves
+            client1.send(JsonFmt.toJson(new GameCommand<GameCommand.PayloadMakeMove>(
+                GameCommand.COMMAND_MAKE_MOVE, cl1Id, new GameCommand.PayloadMakeMove("0101"))));
+            
+            String resp1 = client1.receive();
+            log("Client1 move response: " + resp1);
+
+            // Illegal move
+            client1.send(JsonFmt.toJson(new GameCommand<GameCommand.PayloadMakeMove>(
+                GameCommand.COMMAND_MAKE_MOVE, cl1Id, new GameCommand.PayloadMakeMove("0101"))));
+
+            String respIllegal = client1.receive();
+            log("Client1 illegal move response: " + respIllegal);
+
+            client2.send(JsonFmt.toJson(new GameCommand<GameCommand.PayloadMakeMove>(
+                GameCommand.COMMAND_MAKE_MOVE, cl2Id, new GameCommand.PayloadMakeMove("0202"))));
+            String resp2 = client2.receive();
+            log("Client2 move response: " + resp2);
+
+            // Parse responses to ensure at least one move was accepted
+            GameResponse gr1 = JsonFmt.fromJson(resp1, GameResponse.class);
+            GameResponse gr2 = JsonFmt.fromJson(resp2, GameResponse.class);
+            GameResponse grIllegal = JsonFmt.fromJson(respIllegal, GameResponse.class);
+
+            if (gr1.isError() && gr2.isError()) {
+                fail("Both clients' moves were rejected");
+            }
+
+            if (!grIllegal.isError()) {
+                fail("Illegal move was accepted by the server");
+            }
+
+            client1.close();
+            client2.close();
+            server.stop();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("MockClients failed during match play test: " + e.getMessage());
+        }
     }
 }

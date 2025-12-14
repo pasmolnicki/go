@@ -1,14 +1,14 @@
 package go.project.server.server;
 
 /**
- * Global logger singleton for server logging
+ * Global logger singleton
  */
 public class Logger {
 
     // Available log levels
-    public static final int LEVEL_ALL = 3;
     public static final int LEVEL_INFO = 1;
     public static final int LEVEL_ERROR = 2;
+    public static final int LEVEL_ALL = LEVEL_INFO | LEVEL_ERROR;
 
     // Singleton instance
     private static Logger instance = null;

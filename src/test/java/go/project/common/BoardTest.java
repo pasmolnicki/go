@@ -1,11 +1,8 @@
-package go.project.server.base;
+package go.project.common;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
-
-import go.project.server.game.base.Board;
-import go.project.server.game.base.Color;
 
 public class BoardTest {
 

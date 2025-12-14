@@ -1,4 +1,4 @@
-package go.project.server.game.base;
+package go.project.common;
 
 // Color of the stones
 public enum Color {

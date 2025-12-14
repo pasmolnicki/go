@@ -2,7 +2,7 @@ package go.project.server.server;
 
 import java.net.Socket;
 
-import go.project.server.server.json.Connection;
+import go.project.common.json.Connection;
 
 /**
  * Represents data associated with a connected client.
@@ -10,35 +10,12 @@ import go.project.server.server.json.Connection;
  */
 public class ClientData {
 
-    // JSON representation of client data
-    public static class JsonClientData extends Connection{
-        private String nickname;
-
-        public JsonClientData(final JsonClientData other) {
-            super(other.clientId);
-            this.nickname = other.nickname;
-        }
-
-        public JsonClientData() {
-            super(java.util.UUID.randomUUID().toString());
-            this.nickname = "";
-        }
-
-        public String getNickname() {
-            return nickname;
-        }
-
-        public void setNickname(String nickname) {
-            this.nickname = nickname;
-        }
-    }
-
-    private JsonClientData clientData = new JsonClientData();
+    private Connection clientData;
     private Socket conn;
 
     public ClientData(final ClientData other) {
         this.conn = other.conn;
-        this.clientData = new JsonClientData(other.clientData);
+        this.clientData = new Connection(other.clientData.getClientId());
     }
 
     /**
@@ -46,12 +23,13 @@ public class ClientData {
      */
     public ClientData(Socket conn) {
         this.conn = conn;
+        this.clientData = new Connection(java.util.UUID.randomUUID().toString());
     }
 
     /**
      * Gets the JSON-serializable client data.
      */
-    public JsonClientData data() {
+    public Connection data() {
         return clientData;
     }
 

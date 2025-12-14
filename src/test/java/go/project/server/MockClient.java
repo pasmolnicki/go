@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import go.project.server.game.base.Config;
+import go.project.common.Config;
 import go.project.server.server.Logger;
 
 public class MockClient {
@@ -14,6 +14,16 @@ public class MockClient {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
+    private int port;
+
+
+    public MockClient() {
+        this.port = Config.PORT;
+    }
+
+    public MockClient(int port) {
+        this.port = port;
+    }
 
     /**
      * Logs a message with the global Logger.
@@ -26,10 +36,10 @@ public class MockClient {
      * Connects to the server using the port defined in Config.
      */
     public void connect() throws IOException {
-        this.socket = new Socket("localhost", Config.PORT);
+        this.socket = new Socket("localhost", port);
         this.out = new PrintWriter(socket.getOutputStream(), true);
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        log("Connected to server at localhost:" + Config.PORT);
+        log("Connected to server at localhost:" + port);
     }
 
     /**

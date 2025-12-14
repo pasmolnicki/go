@@ -1,4 +1,4 @@
-package go.project.server.game.base;
+package go.project.common;
 
 
 // Keeps the config constants for the server, client, and game

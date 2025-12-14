@@ -1,9 +1,9 @@
-package go.project.server.base;
+package go.project.common;
 
 import org.junit.Test;
 
-import go.project.server.game.base.Color;
-import go.project.server.game.base.Move;
+import go.project.common.Color;
+import go.project.common.Move;
 
 public class MoveTest {
     

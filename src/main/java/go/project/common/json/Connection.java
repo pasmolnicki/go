@@ -1,4 +1,4 @@
-package go.project.server.server.json;
+package go.project.common.json;
 
 // JSON representation of a connection
 // Contains the clientId

@@ -1,4 +1,4 @@
-package go.project.server.game.base;
+package go.project.common;
 
 // Has Board representation of the Go game,
 // stored as a 2D array of intersections
@@ -46,6 +46,8 @@ public class Board implements BoardLike {
         if (move.isPass()) {
             return;
         }
+        grid[move.getX()][move.getY()] = move.getColor();
+        this.currentSide = (this.currentSide == Color.BLACK) ? Color.WHITE : Color.BLACK;
     }
 
     @Override

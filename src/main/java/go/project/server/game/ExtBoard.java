@@ -2,9 +2,9 @@ package go.project.server.game;
 
 import java.util.Vector;
 
-import go.project.server.game.base.Board;
-import go.project.server.game.base.Color;
-import go.project.server.game.base.Move;
+import go.project.common.Board;
+import go.project.common.Color;
+import go.project.common.Move;
 
 // Actual Board representation for the backend
 final public class ExtBoard extends Board implements ExtBoardLike {

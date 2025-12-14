@@ -1,11 +1,14 @@
-package go.project.server.server.json;
+package go.project.common.json;
 
-import go.project.server.game.base.Color;
+import go.project.common.Color;
 
 
 /**
  * JSON representation of a player's turn
  * Returned on game start to indicate which side the player is on
+ * Usage:
+ * 
+ * JsonFmt.fromJson(jsonString, PlayerTurn.class);
  */
 public class PlayerTurn {
     private String side;

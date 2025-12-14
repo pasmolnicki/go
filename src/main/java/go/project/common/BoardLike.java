@@ -1,4 +1,4 @@
-package go.project.server.game.base;
+package go.project.common;
 
 // Represents behavior common to all Board-like entities
 public interface BoardLike {

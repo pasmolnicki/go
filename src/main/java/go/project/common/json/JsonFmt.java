@@ -1,4 +1,4 @@
-package go.project.server.server.json;
+package go.project.common.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
